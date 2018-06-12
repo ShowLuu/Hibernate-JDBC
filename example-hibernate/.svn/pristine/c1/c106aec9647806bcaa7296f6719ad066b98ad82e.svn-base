@@ -1,0 +1,436 @@
+package com.jingluu.demo.hibernate;
+
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.transform.Transformers;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import com.jingluu.demo.hibernate.entity.Role;
+import com.jingluu.demo.hibernate.entity.User;
+/**
+ * 
+ * HQL，全称Hibernate Query Language，是Hibernate提供的一套面向对象的实体查询语言，
+ * 它保留了SQL核心关键字，如select 、from、where、order by、group by等，
+ * 以及一些常用聚合函数如count、min、max、sum、avg等。
+ * 不同的是，HQL用实体代替表名，用实体属性代替表字段。
+ *
+ */
+public class HibernateHQLTest {
+	private SessionFactory sessionFactory;
+	
+	/*@Before
+    public void before(){
+		//读取默认的hibernate.cfg.xml
+		sessionFactory = new Configuration().configure().buildSessionFactory();
+		
+		//读取指定的配置文件
+		//sessionFactory = new Configuration().configure("config/hibernate.xml").buildSessionFactory();
+    }*/
+	
+	@Before
+    public void before(){
+		//读取默认的hibernate.cfg.xml
+		StandardServiceRegistryBuilder builder =  new StandardServiceRegistryBuilder().configure();
+		
+		//构建StandardServiceRegistry
+		StandardServiceRegistry registry = builder.build();
+		MetadataSources metadataSources = new MetadataSources(registry);
+		
+		//通过StandardServiceRegistry构建Metadata
+		Metadata metadata = metadataSources.buildMetadata();
+		
+		//通过Metadata构建SessionFactory
+		sessionFactory = metadata.buildSessionFactory();
+		 
+    }
+	 
+	@Test
+	@Ignore
+	public void findAll(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select * from user
+			String hql = "from User"; //select u from User u
+			Query query = session.createQuery(hql);
+			List<User> users = query.list();
+			System.out.println(users);
+			
+			//##############################
+			
+			query = session.createQuery(hql);
+			users = query.list();
+			System.out.println(users);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	@Test
+	@Ignore
+	public void findWhere(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select * from user
+			String hql = "from User where id = '9ef4ad37-5ddb-442a-a28b-8b6719e53192'"; //select u from User u
+			Query query = session.createQuery(hql);
+			List users = query.list();
+			
+			System.out.println(users.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 返回指定字段值
+	 */
+	@Test
+	@Ignore
+	public void findFields1(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select id,username from user
+			String hql = "select new User(u.id,u.username) from User u"; 
+			Query query = session.createQuery(hql);
+			
+			List<User> users = query.list();
+			
+			System.out.println(users.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 结果集转换
+	 */
+	@Test
+	@Ignore
+	public void findFieldsResultTransformer(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession(); 
+			
+			//SQL : select id,username from user
+			String hql = "select u.id as id ,u.username as username from User u"; 
+			Query query = session.createQuery(hql);
+			
+			query.setResultTransformer(Transformers.aliasToBean(User.class));
+			List<User> users = query.list(); 
+			
+          /*  query.setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP);
+			List<Map<String,Object>> users = query.list(); */
+			
+           /*query.setResultTransformer(Transformers.TO_LIST);
+		   List users = query.list(); */
+			
+		   System.out.println(users.size());
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	 
+	/**
+	 * 占位符查询
+	 */
+	@Test
+	@Ignore
+	public void findPlaceholderWhere(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select * from user where id = ?
+			String hql = "from User where id = ? and username = ?"; 
+			Query query = session.createQuery(hql);
+			query.setString(0, "9ef4ad37-5ddb-442a-a28b-8b6719e53192");
+			query.setString(1, "张三");
+			List users = query.list();
+			
+			System.out.println(users.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 命名查询
+	 */
+	@Test
+	@Ignore
+	public void findNamedWhere(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select * from user where id = ? and username = ?
+			String hql = "from User where id = :id and username = :username"; 
+			Query query = session.createQuery(hql);
+			query.setString("id", "9ef4ad37-5ddb-442a-a28b-8b6719e53192");
+			query.setString("username", "张三");
+			List users = query.list();
+			
+			System.out.println(users.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * in 条件查询
+	 */
+	@Test
+	@Ignore
+	public void findInWhere(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select * from user where id in (? , ?)
+			String hql = "from User where id in (:ids)"; 
+			Query query = session.createQuery(hql);
+			
+			query.setParameterList("ids", new String[]{"9ef4ad37-5ddb-442a-a28b-8b6719e53192",
+					                                   "79545577-19c4-4fba-b71d-62a973531ab2"});
+			List<User> users = query.list();
+			
+			System.out.println(users.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 排序
+	 */
+	@Test
+	@Ignore
+	public void findOrder(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select * from user order by created_time desc
+			String hql = "from User order by createdTime desc"; 
+			Query query = session.createQuery(hql);
+			 
+			List<User> users = query.list();
+			
+			System.out.println(users.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 命名查询
+	 */
+	@Test
+	@Ignore
+	public void findNamedQuery(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			 
+			Query query = session.getNamedQuery("findAll");
+			List<Role> roles = query.list();
+			System.out.println(roles);
+			 
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 分页
+	 */
+	@Test
+	@Ignore
+	public void findPage(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select * from user limit offset,size
+			String hql = "from User"; 
+			Query query = session.createQuery(hql);
+			query.setFirstResult(4); //offset，偏移量，即数据集的某个起始位置
+			query.setMaxResults(2); //size 页面大小，即返回的记录数
+			 
+			List<User> users = query.list();
+			
+			System.out.println(users);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 连接查询
+	 */
+	@Test
+	@Ignore
+	public void findJoin(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select *  from USER u cross  join ROLE r  where u.ROLE_ID=r.ID and r.ID=?
+			//交叉连接
+			String hql = "select u from User u,Role r where u.roleId = r.id and r.id = :roleId"; 
+			//左连接
+			//String hql = "select u from User u left join Role r on u.roleId = r.id  where  r.id = :roleId"; 
+			//右连接
+			//String hql = "select u from User u right join Role r on u.roleId = r.id  where  r.id = :roleId"; 
+			
+			Query query = session.createQuery(hql);
+			query.setString("roleId", "17a6cbb0-1531-46a3-8682-ad66c12d2d4e");
+			 
+			List<User> list = query.list();
+			
+			System.out.println(list);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 聚合查询
+	 */
+	@Test
+	@Ignore
+	public void findCount(){
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			
+			//SQL : select * from user where id in (? , ?)
+			String hql = "select count(id) from User"; 
+			Query query = session.createQuery(hql);
+			 
+			Object count = query.uniqueResult();
+			
+			System.out.println(count);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 删除
+	 */
+	@Test
+	@Ignore
+	public void delete(){
+		Session session = null;
+		try {
+			//创建新的SESSION
+			//session = sessionFactory.openSession();
+			
+			//获取当前线程下的Session
+			//需要在hibernate.cfg.xml配置： <property name="hibernate.current_session_context_class">thread</property>
+			session = sessionFactory.getCurrentSession();
+			Transaction tx = session.getTransaction();
+			
+			//开始事务（会把autocommit设置为false）
+			tx.begin();
+			
+			//SQL : delete from user where id = ?
+			String hql = "delete from User where id = :id";
+			Query query = session.createQuery(hql);
+			query.setString("id", "2"); 
+			 
+			query.executeUpdate();
+			 
+			//提交事务
+			//tx.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	
+	/**
+	 * 修改
+	 */
+	@Test
+	@Ignore
+	public void update(){
+		Session session = null;
+		try {
+			//创建新的SESSION
+			session = sessionFactory.openSession();
+			
+			//获取当前线程下的Session
+			//需要在hibernate.cfg.xml配置： <property name="hibernate.current_session_context_class">thread</property>
+			//session = sessionFactory.getCurrentSession();
+			Transaction tx = session.getTransaction();
+			
+			//开始事务（会把autocommit设置为false）
+			tx.begin();
+			
+			//SQL : update user set password= ? where id = ?
+			String hql = "update User set password= :password where id = :id";
+			Query query = session.createQuery(hql);
+			query.setString("id", "6"); 
+			query.setString("password", "9"); 
+			 
+			query.executeUpdate();
+			 
+			//提交事务
+			//tx.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			session.close();
+		}
+	}
+	 
+	@After
+    public void after(){
+		sessionFactory.close();
+	}
+}

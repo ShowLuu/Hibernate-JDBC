@@ -1,0 +1,295 @@
+package com.jingluu.demo.hibernate;
+
+import java.util.Date;
+import java.util.UUID;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import com.jingluu.demo.hibernate.entity.Role;
+import com.jingluu.demo.hibernate.entity.User;
+
+public class HibernateCURDTest {
+	private SessionFactory sessionFactory;
+	
+	/*@Before
+    public void before(){
+		//读取默认的hibernate.cfg.xml
+		sessionFactory = new Configuration().configure().buildSessionFactory();
+		
+		//读取指定的配置文件
+		//sessionFactory = new Configuration().configure("config/hibernate.xml").buildSessionFactory();
+    }*/
+	
+	@Before
+    public void before(){
+		//读取默认的hibernate.cfg.xml
+		StandardServiceRegistryBuilder builder =  new StandardServiceRegistryBuilder().configure();
+		
+		//构建StandardServiceRegistry
+		StandardServiceRegistry registry = builder.build();
+		MetadataSources metadataSources = new MetadataSources(registry);
+		
+		//通过StandardServiceRegistry构建Metadata
+		Metadata metadata = metadataSources.buildMetadata();
+		
+		//通过Metadata构建SessionFactory
+		sessionFactory = metadata.buildSessionFactory();
+    }
+	
+	/**
+	 * 根据实体唯一标识查询
+	 */
+	@Test
+	//@Ignore
+    public void get(){
+		//打开新的Session
+		Session session = sessionFactory.openSession();
+				 
+		//开启事务
+		session.beginTransaction();
+		
+		//执行数据库操作
+		//（1）第一次直接查询数据库，并将结果放到session中
+		//（2）找不到记录返回null值
+		User user = session.get(User.class,"9ef4ad37-5ddb-442a-a28b-8b6719e53192");
+		System.out.println(user);
+		
+		//第二次从session中获取
+		user = session.get(User.class,"9ef4ad37-5ddb-442a-a28b-8b6719e53192");
+		System.out.println(user);
+		
+		//提交事务
+		session.getTransaction().commit();
+		
+		//关闭session
+		session.close();
+    }
+	
+	/**
+	 * 根据实体唯一标识查询
+	 */
+	@Test
+	@Ignore
+    public void load(){
+		//打开新的Session
+		Session session = sessionFactory.openSession();
+		 
+		//开启事务
+		session.beginTransaction();
+		
+		//执行数据库操作
+		//（1）第一次直接查询数据库，并将结果放到session中
+		//（2）找不到记录，抛出org.hibernate.ObjectNotFoundException异常
+		//（3）执行load方法时并未真正执行数据库查询，只生成一个包含主键的代理对象
+		//在后续使用该对象时才会去查询数据库（延迟加载）
+		User user = session.load(User.class,"9ef4ad37-5ddb-442a-a28b-8b6719e53192");
+		System.out.println(user);
+		
+		//第二次从session中获取
+		user = session.load(User.class,"9ef4ad37-5ddb-442a-a28b-8b6719e53192");
+		System.out.println(user);
+		
+		//提交事务
+		session.getTransaction().commit();
+		
+		//关闭session
+		session.close();
+    }
+	
+	@Test
+	@Ignore
+    public void save(){
+		//打开新的Session
+		Session session = sessionFactory.openSession();
+		
+		//实体
+		Role role = new Role();
+		role.setId(UUID.randomUUID().toString());
+		role.setName("管理员2");
+		role.setDescription("管理员角色2");
+		//role.setEnabled(1);
+		role.setCreatedTime(new Date());
+		
+		//开启事务
+		session.beginTransaction();
+		
+		//执行数据库操作
+		session.save(role);
+		
+		//提交事务
+		session.getTransaction().commit();
+		
+		//关闭session
+		session.close();
+	}
+	
+	@Test
+	@Ignore
+    public void saveOrUpdate(){
+		//打开新的Session
+		Session session = sessionFactory.openSession();
+		
+		//实体
+		Role role = new Role();
+		//role.setId(UUID.randomUUID().toString());
+		role.setId("bda4a6b4-da76-4db9-bcb0-e494335f6b38");
+		role.setName("管理员2");
+		role.setDescription("管理员角色2");
+		//role.setEnabled(1);
+		role.setCreatedTime(new Date());
+		
+		//开启事务
+		session.beginTransaction();
+		
+		//执行数据库操作
+		//首先判断数据是否存在，如果存在则修改，否则新增
+		session.saveOrUpdate(role);
+		
+		//提交事务
+		session.getTransaction().commit();
+		
+		//关闭session
+		session.close();
+	}
+	
+	@Test
+	@Ignore
+    public void update(){
+		//打开新的Session
+		Session session = sessionFactory.openSession();
+		
+		//实体
+		Role role = new Role();
+		//role.setId(UUID.randomUUID().toString());
+		role.setId("90a4d5d1-705e-485d-bde9-aa2450cac746");
+		role.setName("管理员2");
+		role.setDescription("管理员角色2");
+		//role.setEnabled(1);
+		role.setCreatedTime(new Date());
+		
+		//开启事务
+		session.beginTransaction();
+		
+		//执行数据库操作
+		//如果修改一个不存在的数据，抛org.hibernate.StaleStateException异常
+		session.update(role);
+		
+		//提交事务
+		session.getTransaction().commit();
+		
+		//关闭session
+		session.close();
+	}
+	
+	@Test
+	@Ignore
+    public void delete(){
+		//打开新的Session
+		Session session = sessionFactory.openSession();
+		
+		//实体
+		String id = "e30f570a-4627-408c-81f6-74dc47f13007";
+		Role role = new Role();
+		//role.setId(UUID.randomUUID().toString());
+		role.setId(id); 
+		
+		//开启事务
+		session.beginTransaction();
+		
+		//执行数据库操作
+		session.delete(role);
+		
+		//提交事务
+		session.getTransaction().commit();
+		
+		//关闭session
+		session.close();
+	}
+	
+	@Test
+	@Ignore
+    public void delete2(){
+		//打开新的Session
+		Session session = sessionFactory.openSession();
+		
+		//实体
+		String id = "160a9654-b2e1-4e90-ae57-63d4f63670e3";
+		
+		//开启事务
+		session.beginTransaction();
+		
+		Role role = session.get(Role.class, id);
+		
+		System.out.println("---------------");
+		
+		//执行数据库操作
+		//如果删除一个不存在的记录，抛org.hibernate.StaleStateException异常
+		session.delete(role);
+		
+		//提交事务
+		session.getTransaction().commit();
+		
+		//关闭session
+		session.close();
+	}
+	
+	/**
+	 * 如果在同一个事务中同时有get,save,update,delete操作，
+	 * 不管这些操作的先后顺序如何，Hibernate默认的执行顺序是：get,save，update，delete。
+	 */
+	@Test
+	//@Ignore
+    public void curd(){
+		//打开新的Session
+		Session session = sessionFactory.openSession();
+		
+		//实体
+		
+		
+		
+		//开启事务
+		session.beginTransaction(); 
+		
+		//执行数据库操作
+		Role role = new Role();
+		role.setId("cb13b871-491f-41df-8cba-7b51252ad7c7"); 
+		session.delete(role);
+		//session.flush(); //刷新session,与数据库进行同步
+		
+		Role role2 = new Role();
+		role2.setId("ff2045a2-d16b-4bfa-b718-bfa5ea003815"); 
+		role2.setDescription("abcd");
+		session.update(role2);
+		//session.flush();
+		
+		session.get(Role.class,"ff2045a2-d16b-4bfa-b718-bfa5ea003815");
+		//session.flush();
+		
+		Role newRole = new Role();
+		newRole.setId(UUID.randomUUID().toString());
+		newRole.setName("NEW_ROLE");
+		newRole.setCreatedTime(new Date());
+		session.save(newRole);
+		//session.flush();
+		
+		//提交事务
+		session.getTransaction().commit();
+		
+		//关闭session
+		session.close();
+	}
+	 
+	@After
+    public void after(){
+		sessionFactory.close();
+	}
+}
